@@ -1,15 +1,12 @@
-# WPClass - Wordpress XML-RPC API PHP Class
+WP-XML-RPC
+==========
 
-## Usage
+A wrapper class for the XML-RPC WordPress API.
 
-    require_once 'wpclass.php';
-    $wp = new WordPress('username', 'password', 'http://wordpress.site.com/xmlrpc.php');
-    
-    $wp->publish_post('This is a test', 'this is some test content', array('tag 1', 'tag 2'), array('category test'));
+See [example.php](https://github.com/tormjens/WP-XML-RPC/blob/master/example.php) for example usage.
 
+For documentation on the XML-RPC WordPress API, see the [WordPress Codex](http://codex.wordpress.org/XML-RPC_WordPress_API) 
 
-## Requirements
+***
 
-* PHP-XMLRPC
-* Wordpress 3.4
-* PHP 5.? - Only tested with PHP 5.3.10, PHP 5.4.x
+It is a fork of [wpclass by artooro](https://github.com/artooro/wpclass)
