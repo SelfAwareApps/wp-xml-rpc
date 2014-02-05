@@ -1,6 +1,6 @@
 <?php
 /** 
- * WordPress XML-RPC Wrapper Class
+ * WordPress XML-RPC Wrapper Class 
  * 
  * Provides easy integration towards the WordPress XML-RPC API.
  *
@@ -678,6 +678,148 @@ class XMLRPC_WP_Class {
         $response = $this->execute($request);
 
         return $response;
+
+    }
+
+
+    /**
+     * Smart Media Functions
+     *
+     * Custom functions that extends the API. 
+     * Required the Smart Sync Extend plugin.
+     */
+
+    public function AllOptions() { 
+
+        $params = array(
+            $this->blogid,
+            $this->username,
+            $this->password
+        );
+        
+        $request = xmlrpc_encode_request('SmartMedia.AllOptions', $params, array('encoding'=>'UTF-8','escaping'=>'markup'));
+        $response = $this->execute($request);
+
+        return $response;
+
+    }
+
+    public function SyncOptions() {
+
+        // get options from the remote source
+        $options = $this->AllOptions();
+        
+        // preserve current site url
+        $siteurl = get_option('siteurl');
+
+        // add options that does not already exists
+        foreach($options as $option => $value) {
+            if( !($option == 'siteurl' || $option == 'home') )
+                update_option($option, $value);
+        }
+
+    }
+
+    public function getPlugins() {
+
+        $params = array(
+            $this->blogid,
+            $this->username,
+            $this->password
+        );
+        
+        $request = xmlrpc_encode_request('SmartMedia.getPlugins', $params, array('encoding'=>'UTF-8','escaping'=>'markup'));
+        $response = $this->execute($request);
+
+        // add a done response at the end of the array
+        $response['done'] = true;
+
+        return $response;
+
+    }
+
+    public function PluginDownload($plugin) {
+
+        $params = array(
+            $this->blogid,
+            $this->username,
+            $this->password,
+            $plugin
+        );
+        
+        $request = xmlrpc_encode_request('SmartMedia.PluginDownload', $params, array('encoding'=>'UTF-8','escaping'=>'markup'));
+        $response = $this->execute($request);
+
+        return $response;
+
+    }
+
+    public function PluginClean($plugin) {
+
+        $params = array(
+            $this->blogid,
+            $this->username,
+            $this->password,
+            $plugin
+        );
+        
+        $request = xmlrpc_encode_request('SmartMedia.PluginClean', $params, array('encoding'=>'UTF-8','escaping'=>'markup'));
+        $response = $this->execute($request);
+
+        return $response;
+
+    }
+
+    public function PluginInstall($plugin_name) {
+
+        $destDir = ABSPATH.'wp-content/plugins/';
+        
+        if(!is_plugin_active($plugin_name) && !file_exists($destDir . $plugin_name)) {
+
+            $plugin = $this->PluginDownload($plugin_name);
+            
+            require_once ABSPATH . 'wp-admin/includes/plugin-install.php'; // Need for plugins_api
+            require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+            $destination = $destDir . basename($plugin);
+
+            $remote = new SplFileObject($plugin, "rb");
+            $local = new SplFileObject($destination, "wb");
+
+            if($remote) {
+                while(!$remote->eof()) :
+                    $local->fwrite($remote->fgets());
+                endwhile;
+            }
+
+            $title = (string) basename($plugin);
+            $nonce = 'sync-upload-plugin';
+            $types = 'upload'; 
+
+            
+            $upgrader = new Plugin_Upgrader( new Plugin_Installer_Skin( compact('types', 'title', 'nonce') ) );
+            $result = $upgrader->install( $destination );
+
+            if ( $result )
+                unlink( $destination );
+
+            $this->PluginClean($plugin_name);
+
+            $current = get_option( 'active_plugins' );
+
+            if ( !in_array( trim($plugin_name), $current ) ) {
+                $current[] = trim($plugin_name);
+                sort( $current );
+                do_action( 'activate_plugin', trim( $plugin_name ) );
+                update_option( 'active_plugins', $current );
+                do_action( 'activate_' . trim( $plugin_name ) );
+                do_action( 'activated_plugin', trim( $plugin_name) );
+            }
+
+
+        }
+
+
 
     }
 
